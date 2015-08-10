@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="bower_components/onsenui/build/css/onsenui.css">
+    <link rel="stylesheet" type="text/css" href="bower_components/onsenui/build/css/onsen-css-components-sunshine-theme.css">
+
+    <link rel="stylesheet" type="text/css" href="css/app.css">
+
+    <script type="text/javascript" src="bower_components/angular/angular.min.js"></script>
+    <script type="text/javascript" src="bower_components/onsenui/build/js/onsenui_all.min.js"></script>
+
+    <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/storage.js"></script>
+    <script type="text/javascript" src="js/websocket.js"></script>
+    <script type="text/javascript" src="js/module.js"></script>
+    <script type="text/javascript" src="js/services/user.js"></script>
+    <script type="text/javascript" src="js/services/post.js"></script>
+    <script type="text/javascript" src="js/controllers/app.js"></script>
+    <script type="text/javascript" src="js/controllers/user.js"></script>
+    <script type="text/javascript" src="js/controllers/post.js"></script>
+
+  </head>
+  <body ng-controller="AppController">
+
+    <!-- START Navigation Elements -->
+
+    <ons-sliding-menu var="app.menu" main-page="navigation.html" menu-page="menu.html" max-slide-distance="200px" type="reveal" side="left"></ons-sliding-menu>
+
+    <ons-template id="navigation.html">
+      <ons-navigator var="app.navigation" page="splash.html"></ons-navigator>
+    </ons-template>
+
+    <!-- END Navigation Elements -->
+
+    <!-- START Menu -->
+
+    <ons-template id="menu.html">
+      <ons-page>
+        <ons-list>
+
+          <ons-list-header>Posts</ons-list-header>
+          <ons-list-item ng-click="all();">All Posts</ons-list-item>
+          <ons-list-item ng-click="mine();">My Posts</ons-list-item>
+          <ons-list-header>User</ons-list-header>
+          <ons-list-item ng-click="logout();">Logout</ons-list-item>
+        </ons-list>
+      </ons-page>
+    </ons-template>
+
+    <!-- END Menu -->
+
+    <!-- START Splash Page (page displayed if logged out) -->
+
+    <ons-template id="splash.html">
+      <ons-page>
+        <table class="fullscreen">
+          <tbody>
+            <tr>
+              <td class="title">peekio</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="form">
+                  <ons-button modifier="large" ng-click="app.navigation.pushPage('login.html');">login</ons-button><br>
+                  <ons-button modifier="large" ng-click="app.navigation.pushPage('register.html');">register</ons-button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </ons-page>
+    </ons-template>
+
+    <!-- END Splash Page -->
+
+    <!-- START Login Page -->
+
+    <ons-template id="login.html">
+      <ons-page ng-controller="UserController">
+
+        <ons-toolbar>
+          <div class="left">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.navigation.popPage();">
+              <ons-icon icon="ion-chevron-left"></ons-icon>
+            </span>
+          </div>
+          <div class="center">Login</div>
+        </ons-toolbar>
+
+        <div class="form">
+          <input ng-model="form.login.username" type="text" class="text-input--underbar" placeholder="Username">
+          <input ng-model="form.login.password" type="password" class="text-input--underbar" placeholder="Password">
+          <br><br>
+          <ons-button modifier="large" ng-click="login();">Login</ons-button>
+        </div>
+      </ons-page>
+    </ons-template>
+
+    <!-- END Login Page -->
+
+    <!-- START Register Page -->
+
+    <ons-template id="register.html">
+      <ons-page ng-controller="UserController">
+
+        <ons-toolbar>
+          <div class="left">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.navigation.popPage();">
+              <ons-icon icon="ion-chevron-left"></ons-icon>
+            </span>
+          </div>
+          <div class="center">Register</div>
+        </ons-toolbar>
+
+        <div class="form">
+          <input ng-model="form.register.username" type="text" class="text-input--underbar" placeholder="Username">
+          <input ng-model="form.register.password" type="password" class="text-input--underbar" placeholder="Password">
+          <input ng-model="form.register.vpassword" type="password" class="text-input--underbar" placeholder="Verify Password">
+          <br><br>
+          <ons-button modifier="large" ng-click="register();">Register</ons-button>
+        </div>
+      </ons-page>
+    </ons-template>
+
+    <!-- END Register Page -->
+
+    <!-- START Posts List Page -->
+
+    <ons-template id="posts.html">
+      <ons-page ng-controller="PostController">
+
+        <ons-toolbar>
+          <div class="left">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.menu.toggleMenu();">
+              <ons-icon icon="ion-navicon"></ons-icon>
+            </span>
+          </div>
+          <div class="center">All Posts</div>
+          <div class="right">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="openCreate();">
+              <ons-icon icon="ion-plus"></ons-icon>
+            </span>
+          </div>
+        </ons-toolbar>
+
+        <table ng-if="posts.all.length == 0" class="full">
+          <tbody>
+            <tr>
+              <td>No current posts in your area.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ons-list>
+            <ons-list-item ng-repeat="post in posts.all" modifier="chevron" ng-click="viewPost($index, 'all');">
+              {{post.content}}<br>
+              {{post.created}}<br>
+            </ons-list-item>
+        </ons-list>
+
+      </ons-page>
+    </ons-template>
+
+    <!-- END Posts List Page -->
+
+    <!-- START Create Post Dialog -->
+
+      <ons-template id="create-post-dialog.html">
+        <ons-dialog cancelable ng-controller="PostController" var="dialog.create.post">
+          <div class="form">
+
+            <div class="navigation-bar navigation-bar--transparent">
+              <div class="navigation-bar__center navigation-bar--android__center">Create Post <i ng-style=" { color : (form.content.length < 15 || form.content.length > 250) ? 'red' : 'green' } ">{{form.content.length}}</i></div>
+              <div class="navigation-bar__right navigation-bar--android__right">
+                <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="dialog.create.post.hide();">
+                  <i class="ion-close"></i>
+                </span>
+              </div>
+            </div>
+
+            <textarea ng-model="form.content" class="textarea"></textarea><br>
+            <ons-button should-spin="{{form.disabled}}" ng-attr-disabled="{{form.disabled || undefined}}" modifier="large" ng-click="create();">Create</ons-button>
+          </div>
+        </ons-dialog>
+      </ons-template>
+
+    <!-- END Create Post Dialog -->
+
+    <!-- START My Posts Page -->
+
+    <ons-template id="my-posts.html">
+      <ons-page ng-controller="PostController">
+
+        <ons-toolbar>
+          <div class="left">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.menu.toggleMenu();">
+              <ons-icon icon="ion-navicon"></ons-icon>
+            </span>
+          </div>
+          <div class="center">My Posts</div>
+          <div class="right">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.navigation.popPage();">
+              <ons-icon icon="ion-chevron-up"></ons-icon>
+            </span>
+          </div>
+        </ons-toolbar>
+
+        <table ng-if="posts.mine.length == 0" class="full">
+          <tbody>
+            <tr>
+              <td>No current posts in your area.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ons-list>
+            <ons-list-item ng-repeat="post in posts.mine" modifier="chevron" ng-click="viewPost($index, 'mine');">
+              {{post.content}}<br>
+              {{post.created}}<br>
+            </ons-list-item>
+        </ons-list>
+
+      </ons-page>
+    </ons-template>
+
+    <!-- END My Posts Page -->
+
+    <!-- START View Post Page -->
+
+    <ons-template id="view-post.html">
+      <ons-page ng-controller="PostController">
+
+        <ons-toolbar>
+          <div class="left">
+            <span class="toolbar-button--quiet navigation-bar__line-height" ng-click="app.navigation.popPage();">
+              <ons-icon icon="ion-chevron-left"></ons-icon>
+            </span>
+          </div>
+          <div class="center">View</div>
+        </ons-toolbar>
+
+        <div class="title">
+          {{posts.current.content}}
+        </div>
+
+      </ons-page>
+    </ons-template>
+
+    <!-- END View Post Page -->
+
+
+
+  </body>
+</html>
